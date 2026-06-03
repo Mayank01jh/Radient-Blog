@@ -28,6 +28,10 @@ class UserCreate(BaseModel):
     email:    str
     password: str = Field(..., min_length=6)
 
+class UserLogin(BaseModel):
+    email:    str
+    password: str
+
 class UserOut(BaseModel):
     id:       str
     username: str

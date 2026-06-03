@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.database import get_database
-from app.schemas import UserCreate, UserOut, Token
+from app.schemas import UserCreate, UserOut, Token, UserLogin
 from app.auth import hash_password, verify_password, create_access_token
 from datetime import datetime
 from bson import ObjectId
@@ -31,7 +31,7 @@ def register(user: UserCreate):
 
 
 @router.post("/login", response_model=Token)
-def login(user: UserCreate):
+def login(user: UserLogin):
     db = get_database()
     users = db["users"]
 
