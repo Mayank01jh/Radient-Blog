@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Radient — a minimal blog for thoughtful writing." />
+  <title>Radient · Blog</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── HEADER / NAV ── -->
+  <header id="site-header">
+    <div class="container header-inner">
+      <a href="#" class="logo" id="logo-link">Radient</a>
+      <nav id="main-nav" aria-label="Main navigation">
+        <a href="#home"   class="nav-link active" id="nav-home">Home</a>
+        <a href="#about"  class="nav-link"         id="nav-about">About</a>
+        <a href="#write"  class="nav-link"         id="nav-write">Write</a>
+        <a href="#profile" class="nav-link" id="nav-profile" onclick="loadProfile()">Profile</a>
+        <button class="nav-btn" id="auth-btn" onclick="openAuthModal()">Log in</button>
+        <button class="nav-btn" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── HERO ── -->
+  <section id="home" class="hero">
+    <div class="container hero-inner">
+      <span class="hero-label">A quiet place to read</span>
+      <h1 class="hero-title">Ideas worth&nbsp;writing&nbsp;down.</h1>
+      <p class="hero-subtitle">
+        Thoughtful essays, short stories, and reflections — served clean,
+        with no noise in the way.
+      </p>
+      <a href="#posts" class="btn-primary" id="hero-cta">Browse posts</a>
+    </div>
+  </section>
+
+  <!-- ── POSTS GRID ── -->
+  <main id="posts" class="section">
+    <div class="container">
+      <h2 class="section-title">Latest Posts</h2>
+<div class="search-wrap">
+  <input type="text" id="search-input" class="search-input" 
+         placeholder="Search posts…" oninput="filterPosts()" />
+</div>
+      <div class="posts-grid" id="posts-grid"> 
+        <article class="post-card" id="post-1">
+          <div class="post-meta">
+            <span class="post-tag">Essay</span>
+            <span class="post-date">May 30, 2026</span>
+          </div>
+          <h3 class="post-title">The beauty of doing less</h3>
+          <p class="post-excerpt">
+            Simplicity is not the absence of effort — it is the result of
+            choosing only what matters most and letting everything else fall away.
+          </p>
+          <a href="#" class="post-link" id="read-1">Read →</a>
+        </article>
+
+        <article class="post-card" id="post-2">
+          <div class="post-meta">
+            <span class="post-tag">Reflection</span>
+            <span class="post-date">May 18, 2026</span>
+          </div>
+          <h3 class="post-title">On slow mornings and clarity</h3>
+          <p class="post-excerpt">
+            There is something quietly powerful about a morning with no agenda —
+            a cup of tea, a blank page, and the luxury of unhurried thought.
+          </p>
+          <a href="#" class="post-link" id="read-2">Read →</a>
+        </article>
+
+        <article class="post-card" id="post-3">
+          <div class="post-meta">
+            <span class="post-tag">Short Story</span>
+            <span class="post-date">May 5, 2026</span>
+          </div>
+          <h3 class="post-title">The librarian who forgot to read</h3>
+          <p class="post-excerpt">
+            She knew every book by its spine — the worn corners, the faded
+            titles — but could not remember the last story that moved her.
+          </p>
+          <a href="#" class="post-link" id="read-3">Read →</a>
+        </article>
+
+        <article class="post-card" id="post-4">
+          <div class="post-meta">
+            <span class="post-tag">Essay</span>
+            <span class="post-date">Apr 22, 2026</span>
+          </div>
+          <h3 class="post-title">Why constraints make better work</h3>
+          <p class="post-excerpt">
+            Limitation is often mistaken for a barrier. But the best creative
+            work tends to emerge not in spite of constraints, but because of them.
+          </p>
+          <a href="#" class="post-link" id="read-4">Read →</a>
+        </article>
+
+        <article class="post-card" id="post-5">
+          <div class="post-meta">
+            <span class="post-tag">Reflection</span>
+            <span class="post-date">Apr 10, 2026</span>
+          </div>
+          <h3 class="post-title">Attention is the new currency</h3>
+          <p class="post-excerpt">
+            We live in an age that profits from distraction. Choosing what to
+            attend to is, perhaps, the most radical act available to us.
+          </p>
+          <a href="#" class="post-link" id="read-5">Read →</a>
+        </article>
+
+        <article class="post-card" id="post-6">
+          <div class="post-meta">
+            <span class="post-tag">Short Story</span>
+            <span class="post-date">Mar 28, 2026</span>
+          </div>
+          <h3 class="post-title">Letters never sent</h3>
+          <p class="post-excerpt">
+            A drawer full of envelopes, each addressed in careful handwriting
+            to people who would never know they had been written to at all.
+          </p>
+          <a href="#" class="post-link" id="read-6">Read →</a>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── ABOUT ── -->
+  <section id="about" class="section section-alt">
+    <div class="container about-inner">
+      <div class="about-text">
+        <h2 class="section-title">About Radient</h2>
+        <p>
+          Radient is a space for writing that breathes. No algorithm,
+          no noise — just words arranged with care and read at leisure.
+        </p>
+        <p>
+          Posts are published slowly and read even more slowly. If something
+          here stays with you, that is enough.
+        </p>
+      </div>
+      <div class="about-divider" aria-hidden="true"></div>
+      <div class="about-stats">
+        <div class="stat" id="stat-posts">
+          <span class="stat-number">24</span>
+          <span class="stat-label">Posts</span>
+        </div>
+        <div class="stat" id="stat-readers">
+          <span class="stat-number">1.2k</span>
+          <span class="stat-label">Readers</span>
+        </div>
+        <div class="stat" id="stat-years">
+          <span class="stat-number">3</span>
+          <span class="stat-label">Years</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WRITE / NEW POST ── -->
+  <section id="write" class="section">
+    <div class="container write-inner">
+      <h2 class="section-title">Write a Post</h2>
+      <p class="write-subtitle">Share something worth reading.</p>
+
+      <form id="post-form" class="post-form" novalidate>
+        <div class="form-group">
+          <label for="post-title-input">Title</label>
+          <input
+            type="text"
+            id="post-title-input"
+            name="title"
+            placeholder="Give it a title…"
+            autocomplete="off"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="post-tag-input">Category</label>
+          <select id="post-tag-input" name="tag" required>
+            <option value="" disabled selected>Choose a category</option>
+            <option value="Essay">Essay</option>
+            <option value="Reflection">Reflection</option>
+            <option value="Short Story">Short Story</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="post-body-input">Content</label>
+          <textarea
+            id="post-body-input"
+            name="body"
+            placeholder="Write something…"
+            rows="8"
+            required
+          ></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submit-post">Publish</button>
+        <p class="form-status" id="form-status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+    <!-- ── PROFILE ── -->
+        <section id="profile" class="section section-alt" style="display:none">
+        <div class="container">
+         <h2 class="section-title">My Profile</h2>
+         <p><strong>Username:</strong> <span id="profile-username">—</span></p>
+         <p style="margin-top:6px"><strong>Email:</strong> <span id="profile-email">—</span></p>
+         <button class="btn-primary" onclick="logout()" style="margin-top:16px; background:#8a7f74">Log out</button>
+         <h3 style="margin-top:40px; margin-bottom:20px; font-size:1.1rem; font-weight:700">My Posts</h3>
+         <div class="posts-grid" id="my-posts-grid"></div> 
+       </div>
+    </section>
+
+  <!-- ── FOOTER ── -->
+  <footer id="site-footer">
+    <div class="container footer-inner">
+      <span class="footer-logo">Radient</span>
+      <p class="footer-copy">© 2026 · Made with quiet intention.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+
+  <!-- ── AUTH MODAL ── -->
+<div id="auth-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAuthModal()">✕</button>
+
+    <!-- Tabs -->
+    <div class="modal-tabs">
+      <button class="tab-btn active" id="tab-login"    onclick="switchTab('login')">Log in</button>
+      <button class="tab-btn"        id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="you@email.com" required />
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%">Log in</button>
+      <p class="auth-status" id="login-status"></p>
+    </form>
+
+    <!-- Register Form -->
+    <form id="register-form" class="auth-form" style="display:none" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label for="reg-username">Username</label>
+        <input type="text" id="reg-username" placeholder="yourname" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-email">Email</label>
+        <input type="email" id="reg-email" placeholder="you@email.com" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-password">Password</label>
+        <input type="password" id="reg-password" placeholder="min 6 chars" required />
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%">Create account</button>
+      <p class="auth-status" id="register-status"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ── EDIT MODAL ── -->
+<div id="edit-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <h3 style="margin-bottom:24px; font-size:1.1rem">Edit Post</h3>
+    <form id="edit-form" class="auth-form" onsubmit="updatePost(event)">
+      <input type="hidden" id="edit-id" />
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="edit-title" required />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="edit-tag" required>
+          <option value="Essay">Essay</option>
+          <option value="Reflection">Reflection</option>
+          <option value="Short Story">Short Story</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Content</label>
+        <textarea id="edit-body" rows="6" required></textarea>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%">Save changes</button>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
