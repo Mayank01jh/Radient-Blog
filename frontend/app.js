@@ -1,4 +1,4 @@
-const API = "http://127.0.0.1:8000";
+const API = "https://radient-blog-api.onrender.com";
 /* app.js — Radient Blog */
 
 // ── NAV: active link on scroll ───────────────────────────────────────────────
