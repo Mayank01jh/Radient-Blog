@@ -1,16 +1,19 @@
-from pymongo.mongo_client import MongoClient
+from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-import os
 from dotenv import load_dotenv
+import os
+
+# Load environment variables
 load_dotenv()
 
+# MongoDB Atlas connection string from environment variable
 MONGO_URI = os.getenv("MONGO_URI")
 
-# MongoDB Atlas connection
-connection_string = "mongodb+srv://Mayank1234:mayank1234@mydata.ezd5wcv.mongodb.net/"
+if not MONGO_URI:
+    raise ValueError("MONGO_URI environment variable is not set!")
 
 # Create a new client and connect to the server
-client = MongoClient(connection_string, server_api=ServerApi('1'))
+client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 
 # Send a ping to confirm a successful connection
 try:
