@@ -1,4 +1,4 @@
-from passlib.context import CryptContext  # type: ignore
+import bcrypt
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
@@ -12,16 +12,15 @@ SECRET_KEY = os.getenv("SECRET_KEY", "fallback-key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Password hashing setup
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def hash_password(plain_password: str) -> str:
-    """Turn plain text → hashed password for storing in DB"""
-    return pwd_context.hash(plain_password)
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Check if entered password matches stored hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 def create_access_token(data: dict) -> str:
     """Create a JWT token with an expiry time"""
