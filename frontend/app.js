@@ -39,6 +39,18 @@ async function loadPosts() {
             month: 'long', day: 'numeric', year: 'numeric'
         });
 
+        // Determine if logged-in user is the author
+        let isAuthor = false;
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.sub === post.author_id) {
+                    isAuthor = true;
+                }
+            } catch(e) {}
+        }
+
         // Build card HTML
         grid.innerHTML += `
             <article class="post-card">
@@ -50,7 +62,7 @@ async function loadPosts() {
                 <p class="post-excerpt">${post.body.slice(0, 160)}…</p>
                <div style="display:flex; gap:10px; align-items:center; margin-top:4px; flex-wrap:wrap">
     <a href="#" class="post-link">Read →</a>
-    ${localStorage.getItem('token') ? `
+    ${isAuthor ? `
         <button class="delete-btn" onclick="deletePost('${post.id}')">🗑 Delete</button>
         <button class="delete-btn" onclick="openEditModal('${post.id}', \`${post.title.replace(/`/g, "'")}\`, '${post.tag}', \`${post.body.replace(/`/g, "'")}\`)">✏ Edit</button>
     ` : ''}

@@ -14,6 +14,7 @@ class PostOut(BaseModel):
     title:      str
     tag:        str
     body:       str
+    author_id:  str
     created_at: datetime
 
 # ── For partial updates (PATCH requests) ──
