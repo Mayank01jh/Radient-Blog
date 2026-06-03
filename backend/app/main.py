@@ -21,3 +21,12 @@ app.include_router(posts.router, prefix="/posts", tags=["Posts"])
 @app.get("/")
 def root():
     return {"message": "Radient Blog API is running ✅"}
+
+# ── Stats for Frontend ──
+@app.get("/stats")
+def get_stats():
+    from app.database import get_database
+    db = get_database()
+    posts_count = db["posts"].count_documents({})
+    users_count = db["users"].count_documents({})
+    return {"posts": posts_count, "readers": users_count}

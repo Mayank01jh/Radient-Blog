@@ -65,6 +65,31 @@ async function loadPosts() {
 // Call it when page loads
 loadPosts();
 
+async function loadStats() {
+    try {
+        const res = await fetch(`${API}/stats`);
+        const stats = await res.json();
+        
+        // Update DOM elements
+        const postsEl = document.querySelector('#stat-posts .stat-number');
+        const readersEl = document.querySelector('#stat-readers .stat-number');
+        const yearsEl = document.querySelector('#stat-years .stat-number');
+        
+        if (postsEl) postsEl.textContent = stats.posts;
+        if (readersEl) readersEl.textContent = stats.readers;
+        if (yearsEl) {
+            // Calculate years since May 2024 (e.g. start date)
+            const startDate = new Date('2024-05-01');
+            const diffTime = Math.abs(new Date() - startDate);
+            const diffYears = Math.max(1, Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365)));
+            yearsEl.textContent = diffYears;
+        }
+    } catch (e) {
+        console.error("Failed to load stats:", e);
+    }
+}
+loadStats();
+
 
 // ── WRITE FORM: submit handler ───────────────────────────────────────────────
 (function initForm() {
