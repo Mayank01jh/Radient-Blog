@@ -12,81 +12,81 @@ const API = "https://radient-blog-api.onrender.com";
         if (entry.isIntersecting) {
           const id = entry.target.id;
           navLinks.forEach((link) => {
-            link.classList.toggle(
-              'active',
-              link.getAttribute('href') === `#${id}`
-            );
+            link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
           });
         }
       });
     },
     { threshold: 0.45 }
   );
-
   sections.forEach((sec) => observer.observe(sec));
 })();
+
+// ── POSTS GRID ───────────────────────────────────────────────────────────────
 async function loadPosts() {
-    const grid = document.getElementById('posts-grid');
-
-    // Call GET /posts/
+  const grid = document.getElementById('posts-grid');
+  try {
     const response = await fetch(`${API}/posts/`);
-    const posts = await response.json();  // convert response to JS array
+    const posts    = await response.json();
 
-    grid.innerHTML = '';  // clear hardcoded cards
+    grid.innerHTML = '';
+
+    if (!posts.length) {
+      grid.innerHTML = '<p style="color:var(--text-muted)">No posts yet. Be the first to write!</p>';
+      return;
+    }
 
     posts.forEach(post => {
-        const date = new Date(post.created_at).toLocaleDateString('en-US', {
-            month: 'long', day: 'numeric', year: 'numeric'
-        });
+      const date = new Date(post.created_at).toLocaleDateString('en-US', {
+        month: 'long', day: 'numeric', year: 'numeric'
+      });
 
-        // Determine if logged-in user is the author
-        let isAuthor = false;
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.sub === post.author_id) {
-                    isAuthor = true;
-                }
-            } catch(e) {}
-        }
+      // Check if logged-in user is the author
+      let isAuthor = false;
+      const token  = localStorage.getItem('token');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload.sub === post.author_id) isAuthor = true;
+        } catch(e) {}
+      }
 
-        // Build card HTML
-        grid.innerHTML += `
-            <article class="post-card">
-                <div class="post-meta">
-                    <span class="post-tag">${post.tag}</span>
-                    <span class="post-date">${date}</span>
-                </div>
-                <h3 class="post-title">${post.title}</h3>
-                <p class="post-excerpt">${post.body.slice(0, 160)}…</p>
-               <div style="display:flex; gap:10px; align-items:center; margin-top:4px; flex-wrap:wrap">
-    <a href="#" class="post-link" onclick="openPost('${post.id}'); return false;">Read →</a>
-    ${isAuthor ? `
+      const ownerActions = isAuthor ? `
         <button class="delete-btn" onclick="deletePost('${post.id}')">🗑 Delete</button>
-        <button class="delete-btn" onclick="openEditModal('${post.id}', \`${post.title.replace(/`/g, "'")}\`, '${post.tag}', \`${post.body.replace(/`/g, "'")}\`)">✏ Edit</button>
-    ` : ''}
-</div>
+        <button class="delete-btn" onclick="openEditModal('${post.id}', \`${post.title.replace(/`/g,"'")}\`, '${post.tag}', \`${post.body.replace(/`/g,"'")}\`)">✏ Edit</button>
+      ` : '';
 
-            </article>
-        `;
-
+      grid.innerHTML += `
+        <article class="post-card" onclick="openReader('${post.id}')" style="cursor:pointer;">
+          <div class="post-meta">
+            <span class="post-tag">${post.tag}</span>
+            <span class="post-date">${date}</span>
+          </div>
+          <h3 class="post-title">${post.title}</h3>
+          <p class="post-excerpt">${post.body.slice(0, 160)}…</p>
+          <div class="post-card-footer">
+            <span class="post-read-cta">Read →</span>
+            <div class="post-owner-actions" onclick="event.stopPropagation()">
+              ${ownerActions}
+            </div>
+          </div>
+        </article>
+      `;
     });
+  } catch(e) {
+    grid.innerHTML = '<p style="color:var(--text-muted)">Could not load posts.</p>';
+  }
 }
 
-// Call it when page loads
 loadPosts();
 
-
-// ── WRITE FORM: submit handler ───────────────────────────────────────────────
+// ── WRITE FORM ───────────────────────────────────────────────────────────────
 (function initForm() {
-  const form      = document.getElementById('post-form');
-  const statusEl  = document.getElementById('form-status');
-  const grid      = document.getElementById('posts-grid');
-
+  const form     = document.getElementById('post-form');
+  const statusEl = document.getElementById('form-status');
   if (!form) return;
 
-form.addEventListener('submit', async function (e) {
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const token = localStorage.getItem('token');
@@ -108,18 +108,15 @@ form.addEventListener('submit', async function (e) {
 
     const res = await fetch(`${API}/posts/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ title, tag, body })
     });
 
     if (res.ok) {
-      statusEl.style.color = '#a07850';
-      statusEl.textContent = '✓ Post published!';
+      statusEl.style.color  = '#a07850';
+      statusEl.textContent  = '✓ Post published!';
       form.reset();
-      loadPosts();   // refresh grid from real DB
+      loadPosts();
       setTimeout(() => {
         document.getElementById('posts').scrollIntoView({ behavior: 'smooth' });
         statusEl.textContent = '';
@@ -129,18 +126,10 @@ form.addEventListener('submit', async function (e) {
       statusEl.textContent = `✗ ${err.detail || 'Failed to publish.'}`;
       statusEl.style.color = '#c0775a';
     }
-});
-
-function escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
+  });
 })();
 
-// ── POST CARDS: subtle entrance animation on load ────────────────────────────
+// ── POST CARDS: entrance animation ───────────────────────────────────────────
 (function animateCards() {
   const cards = document.querySelectorAll('.post-card');
   cards.forEach((card, i) => {
@@ -154,45 +143,10 @@ function escapeHtml(str) {
   });
 })();
 
-// ── AUTH: login and save JWT token ──────────────────────────────────────────
-async function login(email, password) {
-    const res = await fetch(`${API}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function openAuthModal()  { document.getElementById('auth-modal').style.display = 'flex'; }
+function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
 
-    const data = await res.json();
-    if (res.ok) {
-        localStorage.setItem('token', data.access_token);
-        alert('✅ Logged in! You can now publish posts.');
-    } else {
-        alert(`❌ Login failed: ${data.detail}`);
-    }
-}
-
-// ── AUTH: register new user ──────────────────────────────────────────────────
-async function register(username, email, password) {
-    const res = await fetch(`${API}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password })
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-        alert('✅ Registered! Now log in.');
-    } else {
-        alert(`❌ ${data.detail}`);
-    }
-}
-// ── MODAL CONTROLS ───────────────────────────────────────────────────────────
-function openAuthModal() {
-  document.getElementById('auth-modal').style.display = 'flex';
-}
-function closeAuthModal() {
-  document.getElementById('auth-modal').style.display = 'none';
-}
 function switchTab(tab) {
   document.getElementById('login-form').style.display    = tab === 'login'    ? 'flex' : 'none';
   document.getElementById('register-form').style.display = tab === 'register' ? 'flex' : 'none';
@@ -205,16 +159,20 @@ async function handleLogin(e) {
   const email    = document.getElementById('login-email').value;
   const password = document.getElementById('login-password').value;
   const status   = document.getElementById('login-status');
+
   const res  = await fetch(`${API}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
   });
   const data = await res.json();
+
   if (res.ok) {
     localStorage.setItem('token', data.access_token);
-    document.getElementById('auth-btn').textContent = '✓ Logged in';
+    document.getElementById('auth-btn').style.display   = 'none';
+    document.getElementById('logout-btn').style.display = '';
     closeAuthModal();
+    loadPosts(); // re-render to show author controls
   } else {
     status.textContent = `❌ ${data.detail}`;
     status.style.color = '#c0775a';
@@ -227,12 +185,14 @@ async function handleRegister(e) {
   const email    = document.getElementById('reg-email').value;
   const password = document.getElementById('reg-password').value;
   const status   = document.getElementById('register-status');
+
   const res  = await fetch(`${API}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, email, password })
   });
   const data = await res.json();
+
   if (res.ok) {
     status.style.color = '#a07850';
     status.textContent = '✅ Account created! Now log in.';
@@ -243,31 +203,36 @@ async function handleRegister(e) {
   }
 }
 
-// ── DELETE POST (protected) ───────────────────────────────────────────────
+function logout() {
+  localStorage.removeItem('token');
+  document.getElementById('auth-btn').style.display   = '';
+  document.getElementById('logout-btn').style.display = 'none';
+  loadPosts(); // re-render without author controls
+}
+
+// Restore login state on page load
+(function restoreAuth() {
+  if (localStorage.getItem('token')) {
+    document.getElementById('auth-btn').style.display   = 'none';
+    document.getElementById('logout-btn').style.display = '';
+  }
+})();
+
+// ── DELETE / EDIT POST ────────────────────────────────────────────────────────
 async function deletePost(postId) {
   if (!confirm('Are you sure you want to delete this post?')) return;
-
   const token = localStorage.getItem('token');
-  if (!token) {
-    alert('⚠ Please log in to delete posts.');
-    return;
-  }
+  if (!token) { alert('⚠ Please log in to delete posts.'); return; }
 
   const res = await fetch(`${API}/posts/${postId}`, {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` }
   });
 
-  if (res.ok) {
-    alert('✓ Post deleted.');
-    loadPosts();  // refresh list
-  } else {
-    const err = await res.json();
-    alert(`❌ ${err.detail}`);
-  }
+  if (res.ok) { loadPosts(); }
+  else { const err = await res.json(); alert(`❌ ${err.detail}`); }
 }
 
-// ── EDIT POST ────────────────────────────────────────────────────────────────
 function openEditModal(id, title, tag, body) {
   document.getElementById('edit-id').value    = id;
   document.getElementById('edit-title').value = title;
@@ -285,37 +250,29 @@ async function updatePost(e) {
   const token = localStorage.getItem('token');
   const res   = await fetch(`${API}/posts/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify({
       title: document.getElementById('edit-title').value,
       tag:   document.getElementById('edit-tag').value,
       body:  document.getElementById('edit-body').value
     })
   });
-  if (res.ok) {
-    closeEditModal();
-    loadPosts();
-  } else {
-    alert('✗ Failed to update post.');
-  }
+  if (res.ok) { closeEditModal(); loadPosts(); }
+  else { alert('✗ Failed to update post.'); }
 }
 
 // ── SEARCH / FILTER ──────────────────────────────────────────────────────────
 function filterPosts() {
   const query = document.getElementById('search-input').value.toLowerCase();
   const cards = document.querySelectorAll('.post-card');
-
   cards.forEach(card => {
-    const title = card.querySelector('.post-title')?.textContent.toLowerCase() || '';
-    const tag   = card.querySelector('.post-tag')?.textContent.toLowerCase() || '';
-    const body  = card.querySelector('.post-excerpt')?.textContent.toLowerCase() || '';
-    const match = title.includes(query) || tag.includes(query) || body.includes(query);
-    card.style.display = match ? '' : 'none';
+    const title = card.querySelector('.post-title')?.textContent.toLowerCase()  || '';
+    const tag   = card.querySelector('.post-tag')?.textContent.toLowerCase()    || '';
+    const body  = card.querySelector('.post-excerpt')?.textContent.toLowerCase()|| '';
+    card.style.display = (title.includes(query) || tag.includes(query) || body.includes(query)) ? '' : 'none';
   });
 }
+
 // ── DARK MODE ────────────────────────────────────────────────────────────────
 function toggleDarkMode() {
   document.body.classList.toggle('dark');
@@ -323,8 +280,6 @@ function toggleDarkMode() {
   localStorage.setItem('darkMode', isDark);
   document.getElementById('dark-toggle').textContent = isDark ? '☀️' : '🌙';
 }
-
-// Apply saved preference on load
 if (localStorage.getItem('darkMode') === 'true') {
   document.body.classList.add('dark');
   document.addEventListener('DOMContentLoaded', () => {
@@ -333,171 +288,44 @@ if (localStorage.getItem('darkMode') === 'true') {
   });
 }
 
-// ── PROFILE ──────────────────────────────────────────────────────────────────
-let currentUsername = null;   // cached after first /auth/me
+// ── IMMERSIVE READER ─────────────────────────────────────────────────────────
+const readerOverlay = document.getElementById('reader-overlay');
+const readerArticle = document.getElementById('reader-article');
 
-async function loadProfile() {
-  const token = localStorage.getItem('token');
-  if (!token) { alert('Please log in first.'); return; }
+// Reading progress on scroll
+readerArticle?.addEventListener('scroll', () => {
+  const { scrollTop, scrollHeight, clientHeight } = readerArticle;
+  const pct = scrollHeight - clientHeight > 0
+    ? (scrollTop / (scrollHeight - clientHeight)) * 100
+    : 100;
+  document.getElementById('reader-progress').style.width = pct + '%';
 
-  const res  = await fetch(`${API}/auth/me`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  const data = await res.json();
-  if (res.ok) {
-    currentUsername = data.username;
-    document.getElementById('profile-username').textContent = data.username;
-    document.getElementById('profile-email').textContent    = data.email;
-    document.getElementById('profile-bio-text').textContent = data.bio || 'No bio yet.';
-    document.getElementById('profile-bio-input').value      = data.bio || '';
-    
-    const grid = document.getElementById('my-posts-grid');
-    grid.innerHTML = '';
-    data.posts.forEach(post => {
-      const date = new Date(post.created_at).toLocaleDateString('en-US');
-      grid.innerHTML += `
-        <article class="post-card" style="padding:16px;">
-          <h3 class="post-title" style="font-size:1.1rem">${post.title}</h3>
-          <div class="post-meta" style="margin-bottom:8px;">${post.tag} · ${date}</div>
-          <button class="delete-btn" onclick="deletePost('${post.id}')" style="margin:0;">🗑 Delete</button>
-        </article>
-      `;
-    });
-    document.getElementById('profile').style.display = 'block';
-    document.getElementById('profile').scrollIntoView({ behavior: 'smooth' });
-  } else {
-    localStorage.removeItem('token');
-    alert('Session expired. Please log in again.');
-    document.getElementById('auth-btn').textContent = 'Log in';
-  }
-}
+  // Time left (avg 200 wpm, update every scroll)
+  const totalWords    = (document.getElementById('reader-body')?.textContent || '').split(/\s+/).length;
+  const wordsRead     = Math.round((pct / 100) * totalWords);
+  const wordsLeft     = Math.max(0, totalWords - wordsRead);
+  const minsLeft      = Math.ceil(wordsLeft / 200);
+  const timeEl        = document.getElementById('reader-time-left');
+  if (timeEl) timeEl.textContent = pct < 99 ? `${minsLeft} min left` : 'Done ✓';
+});
 
-async function updateProfile(e) {
-  e.preventDefault();
-  const token = localStorage.getItem('token');
-  if (!token) return;
-  const bio = document.getElementById('profile-bio-input').value;
-  
-  const res = await fetch(`${API}/auth/me`, {
-    method: 'PUT',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}` 
-    },
-    body: JSON.stringify({ bio })
-  });
-  
-  if (res.ok) {
-    const data = await res.json();
-    document.getElementById('profile-bio-text').textContent = data.bio || 'No bio yet.';
-    alert('Profile updated!');
-  } else {
-    alert('Failed to update profile.');
-  }
-}
+async function openReader(postId) {
+  // Reset state
+  readerOverlay.classList.remove('open');
+  document.getElementById('reader-title').textContent  = '';
+  document.getElementById('reader-tag').textContent    = '';
+  document.getElementById('reader-date').textContent   = '';
+  document.getElementById('reader-byline').textContent = '';
+  document.getElementById('reader-body').textContent   = '';
+  document.getElementById('reader-progress').style.width = '0%';
+  document.getElementById('reader-time-left').textContent = '';
+  readerArticle.scrollTop = 0;
 
-// ── CHAT ─────────────────────────────────────────────────────────────────────
-let chatSocket = null;
-
-function setStatusBar(connected) {
-  const dot  = document.querySelector('.chat-status-dot');
-  const text = document.getElementById('chat-status-text');
-  if (!dot || !text) return;
-  dot.style.background = connected ? '#a0c878' : '#c0775a';
-  text.textContent     = connected ? 'Connected · Town Square' : 'Disconnected';
-}
-
-function appendBubble(username, text, isMine) {
-  const win = document.getElementById('chat-window');
-  // Remove the welcome placeholder on first real message
-  const placeholder = win.querySelector('.chat-empty');
-  if (placeholder) placeholder.remove();
-
-  const bubble = document.createElement('div');
-  bubble.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
-  bubble.innerHTML = `<strong>${username}</strong>${text}`;
-  win.appendChild(bubble);
-  win.scrollTop = win.scrollHeight;
-}
-
-function initChat() {
-  document.getElementById('chat').style.display = 'block';
-  document.getElementById('chat').scrollIntoView({ behavior: 'smooth' });
-  const token = localStorage.getItem('token');
-  if (!token) {
-    document.getElementById('chat-window').innerHTML =
-      '<p class="chat-empty">Please log in to join the chat.</p>';
-    setStatusBar(false);
-    return;
-  }
-
-  if (chatSocket && chatSocket.readyState === WebSocket.OPEN) return; // already connected
-
-  const wsUrl = API.replace(/^http/, 'ws') + '/chat/ws';
-  chatSocket = new WebSocket(wsUrl);
-
-  chatSocket.onopen = () => setStatusBar(true);
-  chatSocket.onclose = () => setStatusBar(false);
-
-  chatSocket.onmessage = function(event) {
-    try {
-      const msg   = JSON.parse(event.data);
-      const isMine = msg.username === currentUsername;
-      appendBubble(msg.username, msg.text, isMine);
-    } catch(e) {}
-  };
-}
-
-async function sendChatMessage(e) {
-  e.preventDefault();
-  const input = document.getElementById('chat-input');
-  const text  = input.value.trim();
-  if (!text || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-
-  // Ensure username is fetched
-  if (!currentUsername) {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const r = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const d = await r.json();
-        if (r.ok) currentUsername = d.username;
-      } catch(e) {}
-    }
-  }
-
-  const username = currentUsername || 'Anonymous';
-  chatSocket.send(JSON.stringify({ username, text }));
-  // Render own bubble immediately (echo)
-  appendBubble(username, text, true);
-  input.value = '';
-}
-
-function logout() {
-  localStorage.removeItem('token');
-  currentUsername = null;
-  document.getElementById('auth-btn').textContent = 'Log in';
-  document.getElementById('profile').style.display = 'none';
-}
-
-// ── READ POST MODAL ───────────────────────────────────────────────────────────
-async function openPost(postId) {
-  const modal    = document.getElementById('read-modal');
-  const bodyEl   = document.getElementById('read-modal-body');
-  const titleEl  = document.getElementById('read-modal-title');
-  const tagEl    = document.getElementById('read-modal-tag');
-  const dateEl   = document.getElementById('read-modal-date');
-  const authorEl = document.getElementById('read-modal-author');
-
-  // Show modal immediately with a loading state
-  modal.style.display = 'flex';
+  // Open overlay with loading spinner
   document.body.style.overflow = 'hidden';
-  titleEl.textContent  = '';
-  tagEl.textContent    = '';
-  dateEl.textContent   = '';
-  authorEl.textContent = '';
-  bodyEl.className     = 'read-modal-body loading';
-  bodyEl.textContent   = 'Loading…';
+  readerOverlay.classList.add('open');
+  document.getElementById('reader-body').innerHTML =
+    '<div class="reader-loading"><div class="reader-spinner"></div><p>Loading…</p></div>';
 
   try {
     const res  = await fetch(`${API}/posts/${postId}`);
@@ -507,36 +335,52 @@ async function openPost(postId) {
     const date = new Date(post.created_at).toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric'
     });
+    const wordCount = post.body.split(/\s+/).length;
+    const readMins  = Math.max(1, Math.ceil(wordCount / 200));
 
-    titleEl.textContent  = post.title;
-    tagEl.textContent    = post.tag;
-    dateEl.textContent   = date;
-    authorEl.textContent = `Published on ${date}`;
-    bodyEl.className     = 'read-modal-body';
-    bodyEl.textContent   = post.body;   // pre-wrap keeps line breaks
-    bodyEl.scrollTop     = 0;
-  } catch (err) {
-    bodyEl.className   = 'read-modal-body loading';
-    bodyEl.textContent = '✗ Could not load post.';
+    document.getElementById('reader-tag').textContent    = post.tag;
+    document.getElementById('reader-date').textContent   = date;
+    document.getElementById('reader-title').textContent  = post.title;
+    document.getElementById('reader-byline').textContent = `${readMins} min read · ${date}`;
+    document.getElementById('reader-time-left').textContent = `${readMins} min left`;
+
+    // Render body — split paragraphs on double newlines, wrap each in <p>
+    const bodyEl = document.getElementById('reader-body');
+    bodyEl.innerHTML = '';
+    const paragraphs = post.body.split(/\n\n+/);
+    paragraphs.forEach(para => {
+      const p = document.createElement('p');
+      p.textContent = para.trim();
+      if (p.textContent) bodyEl.appendChild(p);
+    });
+    // If no double newlines, just render single lines
+    if (!paragraphs.length || (paragraphs.length === 1 && paragraphs[0] === post.body)) {
+      bodyEl.innerHTML = '';
+      post.body.split('\n').forEach(line => {
+        if (line.trim()) {
+          const p = document.createElement('p');
+          p.textContent = line.trim();
+          bodyEl.appendChild(p);
+        }
+      });
+    }
+
+    readerArticle.scrollTop = 0;
+  } catch(err) {
+    document.getElementById('reader-body').innerHTML =
+      '<p style="color:var(--text-muted); text-align:center;">✗ Could not load this post.</p>';
   }
 }
 
-function closeReadModal() {
-  document.getElementById('read-modal').style.display = 'none';
+function closeReader() {
+  readerOverlay.classList.remove('open');
   document.body.style.overflow = '';
 }
 
-// Close when clicking the dark backdrop (not the box itself)
-function handleReadModalClick(e) {
-  if (e.target === document.getElementById('read-modal')) {
-    closeReadModal();
-  }
-}
-
-// Also close on Escape key
+// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    closeReadModal();
+    closeReader();
     closeAuthModal();
     closeEditModal();
   }
