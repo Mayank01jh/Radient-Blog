@@ -4,10 +4,9 @@ from app.routes import auth, posts
 
 app = FastAPI(title="Radient Blog API", version="1.0")
 
-# ── CORS — allow the frontend to talk to the backend ──
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],    # change to your frontend URL in production
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
