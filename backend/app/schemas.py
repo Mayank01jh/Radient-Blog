@@ -37,6 +37,10 @@ class UserOut(BaseModel):
     id:       str
     username: str
     email:    str
+    bio:      Optional[str] = None
+
+class UserUpdate(BaseModel):
+    bio: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str

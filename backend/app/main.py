@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import auth, posts
+from app.routes import auth, posts, chat
 
 app = FastAPI(title="Radient Blog API", version="1.0")
 
@@ -16,6 +16,7 @@ app.add_middleware(
 # ── Register routers ──
 app.include_router(auth.router,  prefix="/auth",  tags=["Auth"])
 app.include_router(posts.router, prefix="/posts", tags=["Posts"])
+app.include_router(chat.router,  prefix="/chat",  tags=["Chat"])
 
 # ── Health check ──
 @app.get("/")

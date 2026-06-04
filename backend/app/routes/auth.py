@@ -57,7 +57,32 @@ def get_me(authorization: str = Header(...)):
     for p in posts:
         p["id"] = str(p["_id"])
     return {
+        "id":       str(user["_id"]),
         "username": user["username"],
         "email":    user["email"],
+        "bio":      user.get("bio", ""),
         "posts":    posts
+    }
+
+from app.schemas import UserUpdate
+
+@router.put("/me")
+def update_me(update_data: UserUpdate, authorization: str = Header(...)):
+    from app.auth import decode_token
+    token = authorization.split(" ")[1]
+    payload = decode_token(token)
+    db = get_database()
+    
+    updates = {k: v for k, v in update_data.dict().items() if v is not None}
+    if not updates:
+        return {"message": "No updates provided"}
+        
+    db["users"].update_one({"_id": ObjectId(payload["sub"])}, {"$set": updates})
+    
+    user = db["users"].find_one({"_id": ObjectId(payload["sub"])})
+    return {
+        "id":       str(user["_id"]),
+        "username": user["username"],
+        "email":    user["email"],
+        "bio":      user.get("bio", "")
     }

@@ -61,7 +61,7 @@ async function loadPosts() {
                 <h3 class="post-title">${post.title}</h3>
                 <p class="post-excerpt">${post.body.slice(0, 160)}…</p>
                <div style="display:flex; gap:10px; align-items:center; margin-top:4px; flex-wrap:wrap">
-    <a href="#" class="post-link">Read →</a>
+    <a href="#" class="post-link" onclick="openPost('${post.id}'); return false;">Read →</a>
     ${isAuthor ? `
         <button class="delete-btn" onclick="deletePost('${post.id}')">🗑 Delete</button>
         <button class="delete-btn" onclick="openEditModal('${post.id}', \`${post.title.replace(/`/g, "'")}\`, '${post.tag}', \`${post.body.replace(/`/g, "'")}\`)">✏ Edit</button>
@@ -334,6 +334,8 @@ if (localStorage.getItem('darkMode') === 'true') {
 }
 
 // ── PROFILE ──────────────────────────────────────────────────────────────────
+let currentUsername = null;   // cached after first /auth/me
+
 async function loadProfile() {
   const token = localStorage.getItem('token');
   if (!token) { alert('Please log in first.'); return; }
@@ -342,34 +344,200 @@ async function loadProfile() {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   const data = await res.json();
-
-  document.getElementById('profile-username').textContent = data.username;
-  document.getElementById('profile-email').textContent    = data.email;
-
-  const grid = document.getElementById('my-posts-grid');
-  grid.innerHTML = '';
-  data.posts.forEach(post => {
-    const date = new Date(post.created_at).toLocaleDateString('en-US', {
-      month: 'long', day: 'numeric', year: 'numeric'
+  if (res.ok) {
+    currentUsername = data.username;
+    document.getElementById('profile-username').textContent = data.username;
+    document.getElementById('profile-email').textContent    = data.email;
+    document.getElementById('profile-bio-text').textContent = data.bio || 'No bio yet.';
+    document.getElementById('profile-bio-input').value      = data.bio || '';
+    
+    const grid = document.getElementById('my-posts-grid');
+    grid.innerHTML = '';
+    data.posts.forEach(post => {
+      const date = new Date(post.created_at).toLocaleDateString('en-US');
+      grid.innerHTML += `
+        <article class="post-card" style="padding:16px;">
+          <h3 class="post-title" style="font-size:1.1rem">${post.title}</h3>
+          <div class="post-meta" style="margin-bottom:8px;">${post.tag} · ${date}</div>
+          <button class="delete-btn" onclick="deletePost('${post.id}')" style="margin:0;">🗑 Delete</button>
+        </article>
+      `;
     });
-    grid.innerHTML += `
-      <article class="post-card">
-        <div class="post-meta">
-          <span class="post-tag">${post.tag}</span>
-          <span class="post-date">${date}</span>
-        </div>
-        <h3 class="post-title">${post.title}</h3>
-        <p class="post-excerpt">${post.body.slice(0, 160)}…</p>
-      </article>
-    `;
-  });
+    document.getElementById('profile').style.display = 'block';
+    document.getElementById('profile').scrollIntoView({ behavior: 'smooth' });
+  } else {
+    localStorage.removeItem('token');
+    alert('Session expired. Please log in again.');
+    document.getElementById('auth-btn').textContent = 'Log in';
+  }
+}
 
-  document.getElementById('profile').style.display = 'block';
-  document.getElementById('profile').scrollIntoView({ behavior: 'smooth' });
+async function updateProfile(e) {
+  e.preventDefault();
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  const bio = document.getElementById('profile-bio-input').value;
+  
+  const res = await fetch(`${API}/auth/me`, {
+    method: 'PUT',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}` 
+    },
+    body: JSON.stringify({ bio })
+  });
+  
+  if (res.ok) {
+    const data = await res.json();
+    document.getElementById('profile-bio-text').textContent = data.bio || 'No bio yet.';
+    alert('Profile updated!');
+  } else {
+    alert('Failed to update profile.');
+  }
+}
+
+// ── CHAT ─────────────────────────────────────────────────────────────────────
+let chatSocket = null;
+
+function setStatusBar(connected) {
+  const dot  = document.querySelector('.chat-status-dot');
+  const text = document.getElementById('chat-status-text');
+  if (!dot || !text) return;
+  dot.style.background = connected ? '#a0c878' : '#c0775a';
+  text.textContent     = connected ? 'Connected · Town Square' : 'Disconnected';
+}
+
+function appendBubble(username, text, isMine) {
+  const win = document.getElementById('chat-window');
+  // Remove the welcome placeholder on first real message
+  const placeholder = win.querySelector('.chat-empty');
+  if (placeholder) placeholder.remove();
+
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
+  bubble.innerHTML = `<strong>${username}</strong>${text}`;
+  win.appendChild(bubble);
+  win.scrollTop = win.scrollHeight;
+}
+
+function initChat() {
+  document.getElementById('chat').style.display = 'block';
+  document.getElementById('chat').scrollIntoView({ behavior: 'smooth' });
+  const token = localStorage.getItem('token');
+  if (!token) {
+    document.getElementById('chat-window').innerHTML =
+      '<p class="chat-empty">Please log in to join the chat.</p>';
+    setStatusBar(false);
+    return;
+  }
+
+  if (chatSocket && chatSocket.readyState === WebSocket.OPEN) return; // already connected
+
+  const wsUrl = API.replace(/^http/, 'ws') + '/chat/ws';
+  chatSocket = new WebSocket(wsUrl);
+
+  chatSocket.onopen = () => setStatusBar(true);
+  chatSocket.onclose = () => setStatusBar(false);
+
+  chatSocket.onmessage = function(event) {
+    try {
+      const msg   = JSON.parse(event.data);
+      const isMine = msg.username === currentUsername;
+      appendBubble(msg.username, msg.text, isMine);
+    } catch(e) {}
+  };
+}
+
+async function sendChatMessage(e) {
+  e.preventDefault();
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+
+  // Ensure username is fetched
+  if (!currentUsername) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const r = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const d = await r.json();
+        if (r.ok) currentUsername = d.username;
+      } catch(e) {}
+    }
+  }
+
+  const username = currentUsername || 'Anonymous';
+  chatSocket.send(JSON.stringify({ username, text }));
+  // Render own bubble immediately (echo)
+  appendBubble(username, text, true);
+  input.value = '';
 }
 
 function logout() {
   localStorage.removeItem('token');
+  currentUsername = null;
   document.getElementById('auth-btn').textContent = 'Log in';
   document.getElementById('profile').style.display = 'none';
 }
+
+// ── READ POST MODAL ───────────────────────────────────────────────────────────
+async function openPost(postId) {
+  const modal    = document.getElementById('read-modal');
+  const bodyEl   = document.getElementById('read-modal-body');
+  const titleEl  = document.getElementById('read-modal-title');
+  const tagEl    = document.getElementById('read-modal-tag');
+  const dateEl   = document.getElementById('read-modal-date');
+  const authorEl = document.getElementById('read-modal-author');
+
+  // Show modal immediately with a loading state
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  titleEl.textContent  = '';
+  tagEl.textContent    = '';
+  dateEl.textContent   = '';
+  authorEl.textContent = '';
+  bodyEl.className     = 'read-modal-body loading';
+  bodyEl.textContent   = 'Loading…';
+
+  try {
+    const res  = await fetch(`${API}/posts/${postId}`);
+    if (!res.ok) throw new Error('Not found');
+    const post = await res.json();
+
+    const date = new Date(post.created_at).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    titleEl.textContent  = post.title;
+    tagEl.textContent    = post.tag;
+    dateEl.textContent   = date;
+    authorEl.textContent = `Published on ${date}`;
+    bodyEl.className     = 'read-modal-body';
+    bodyEl.textContent   = post.body;   // pre-wrap keeps line breaks
+    bodyEl.scrollTop     = 0;
+  } catch (err) {
+    bodyEl.className   = 'read-modal-body loading';
+    bodyEl.textContent = '✗ Could not load post.';
+  }
+}
+
+function closeReadModal() {
+  document.getElementById('read-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Close when clicking the dark backdrop (not the box itself)
+function handleReadModalClick(e) {
+  if (e.target === document.getElementById('read-modal')) {
+    closeReadModal();
+  }
+}
+
+// Also close on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeReadModal();
+    closeAuthModal();
+    closeEditModal();
+  }
+});

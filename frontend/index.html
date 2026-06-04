@@ -15,9 +15,9 @@
       <a href="#" class="logo" id="logo-link">Radient</a>
       <nav id="main-nav" aria-label="Main navigation">
         <a href="#home"   class="nav-link active" id="nav-home">Home</a>
-        <a href="#about"  class="nav-link"         id="nav-about">About</a>
         <a href="#write"  class="nav-link"         id="nav-write">Write</a>
         <a href="#profile" class="nav-link" id="nav-profile" onclick="loadProfile()">Profile</a>
+        <a href="#chat" class="nav-link" id="nav-chat" onclick="initChat()">Chat</a>
         <button class="nav-btn" id="auth-btn" onclick="openAuthModal()">Log in</button>
         <button class="nav-btn" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
       </nav>
@@ -191,15 +191,55 @@
     </div>
   </section>
     <!-- ── PROFILE ── -->
-        <section id="profile" class="section section-alt" style="display:none">
+    <section id="profile" class="section section-alt" style="display:none">
         <div class="container">
-         <h2 class="section-title">My Profile</h2>
-         <p><strong>Username:</strong> <span id="profile-username">—</span></p>
-         <p style="margin-top:6px"><strong>Email:</strong> <span id="profile-email">—</span></p>
-         <button class="btn-primary" onclick="logout()" style="margin-top:16px; background:#8a7f74">Log out</button>
-         <h3 style="margin-top:40px; margin-bottom:20px; font-size:1.1rem; font-weight:700">My Posts</h3>
-         <div class="posts-grid" id="my-posts-grid"></div> 
-       </div>
+          <h2 class="section-title">My Profile</h2>
+
+          <div class="profile-card">
+            <div class="profile-field">
+              <span class="profile-label">Username</span>
+              <span class="profile-value" id="profile-username">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="profile-label">Email</span>
+              <span class="profile-value" id="profile-email">—</span>
+            </div>
+            <div class="profile-field">
+              <span class="profile-label">Bio</span>
+              <span class="profile-value" id="profile-bio-text">No bio yet.</span>
+            </div>
+            <form id="profile-form" onsubmit="updateProfile(event)">
+              <textarea id="profile-bio-input" rows="3" placeholder="Write a short bio…"></textarea>
+              <button type="submit" class="btn-primary" style="align-self:flex-start;">Save Bio</button>
+            </form>
+          </div>
+
+          <div style="margin-top:24px; margin-bottom:32px;">
+            <button class="btn-primary" onclick="logout()" style="background:var(--text-muted);">Log out</button>
+          </div>
+
+          <h3 class="section-title" style="font-size:1.1rem;">My Posts</h3>
+          <div class="posts-grid" id="my-posts-grid"></div>
+        </div>
+    </section>
+
+    <!-- ── CHAT ── -->
+    <section id="chat" class="section" style="display:none">
+        <div class="container">
+            <h2 class="section-title">Town Square</h2>
+            <p class="write-subtitle">A real-time room for readers and writers.</p>
+            <div class="chat-status-bar" id="chat-status-bar">
+              <span class="chat-status-dot"></span>
+              <span id="chat-status-text">Connecting…</span>
+            </div>
+            <div id="chat-window">
+                <p class="chat-empty">Welcome to the chat room.<br>Be kind! 👋</p>
+            </div>
+            <form id="chat-form" onsubmit="sendChatMessage(event)">
+                <input type="text" id="chat-input" placeholder="Say something…" required autocomplete="off" />
+                <button type="submit" class="btn-primary">Send</button>
+            </form>
+        </div>
     </section>
 
   <!-- ── FOOTER ── -->
@@ -283,6 +323,21 @@
       </div>
       <button type="submit" class="btn-primary" style="width:100%">Save changes</button>
     </form>
+  </div>
+</div>
+
+<!-- ── READ POST MODAL ── -->
+<div id="read-modal" class="modal-overlay" style="display:none" onclick="handleReadModalClick(event)">
+  <div class="modal-box read-modal-box" id="read-modal-box">
+    <button class="modal-close" onclick="closeReadModal()" id="close-read-modal">✕</button>
+    <div class="read-modal-meta" id="read-modal-meta">
+      <span class="post-tag" id="read-modal-tag"></span>
+      <span class="post-date" id="read-modal-date"></span>
+    </div>
+    <h2 class="read-modal-title" id="read-modal-title"></h2>
+    <p class="read-modal-author" id="read-modal-author"></p>
+    <div class="read-modal-divider"></div>
+    <div class="read-modal-body" id="read-modal-body"></div>
   </div>
 </div>
 
