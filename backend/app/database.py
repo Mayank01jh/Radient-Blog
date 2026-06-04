@@ -5,7 +5,6 @@ import os
 
 load_dotenv()
 
-# MongoDB Atlas connection string from environment variable
 MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://Mayank1234:mayank1234@mydata.ezd5wcv.mongodb.net/")
 
 # Create a new client and connect to the server
