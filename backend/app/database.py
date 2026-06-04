@@ -3,7 +3,6 @@ from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
 load_dotenv()
 
 # MongoDB Atlas connection string from environment variable
