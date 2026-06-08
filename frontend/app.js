@@ -1,7 +1,7 @@
 const API = "https://radient-blog-api.onrender.com";
 /* app.js — Radient Blog */
 
-// ── NAV: active link on scroll ───────────────────────────────────────────────
+// NAV: active link on scroll
 (function initNavHighlight() {
   const sections = document.querySelectorAll('section[id], main[id]');
   const navLinks = document.querySelectorAll('.nav-link');
